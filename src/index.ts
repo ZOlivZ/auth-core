@@ -10,6 +10,9 @@ export {
   UpdateUserData,
   RefreshTokenAdapter,
   TokenBlacklistAdapter,
+  ROLE_ADMIN,
+  isAdmin,
+  getDisplayName,
 } from './types';
 
 // Services
