@@ -75,7 +75,6 @@ export {
   ScimPatchOp,
   ScimFilter,
   parseScimFilter,
-  enableScimBodyParser,
   toScimUser,
   fromScimUser,
   toScimListResponse,
