@@ -43,5 +43,8 @@ export { ScimController } from './scim.controller';
 // Guard and token
 export { ScimBearerGuard, SCIM_BEARER_TOKEN } from './scim-bearer.guard';
 
+// Body parser helper
+export { enableScimBodyParser } from './scim-body-parser.middleware';
+
 // Module
 export { ScimModule } from './scim.module';

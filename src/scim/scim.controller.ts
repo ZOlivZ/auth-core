@@ -15,26 +15,24 @@ import {
 } from '@nestjs/common';
 import { ScimService } from './scim.service';
 import { ScimBearerGuard } from './scim-bearer.guard';
+import { Public } from '../decorators/public';
 import { SCIM_CONTENT_TYPE, type ScimPatchRequest } from './scim.dto';
 
 /**
  * SCIM 2.0 Users controller.
  *
- * Uses @Req().body instead of @Body() to bypass any global ValidationPipe
- * that would strip SCIM properties (whitelist:true strips undecorated fields).
+ * @Public() — tells global auth guards (JWT, roles) to skip these routes.
+ * SCIM has its own ScimBearerGuard for authentication.
+ *
+ * Uses @Req().body — bypasses global ValidationPipe (whitelist:true strips
+ * undecorated fields). The ScimModule registers an Express JSON middleware
+ * for application/scim+json so req.body is always populated.
  */
 @Controller('scim/v2')
+@Public()
 @UseGuards(ScimBearerGuard)
 export class ScimController {
   constructor(private readonly scimService: ScimService) {}
-
-  /**
-   * Get the raw body, preferring __scimBody (saved before ValidationPipe)
-   * over req.body (which may have been stripped by whitelist:true).
-   */
-  private getBody(req: any): any {
-    return req.__scimBody || req.body;
-  }
 
   private getBaseUrl(req: any): string {
     const proto = req.headers['x-forwarded-proto'] || req.protocol || 'http';
@@ -55,9 +53,8 @@ export class ScimController {
     @Res({ passthrough: true }) res: any,
   ) {
     this.setScimContentType(res);
-    const baseUrl = this.getBaseUrl(req);
     return this.scimService.listUsers(
-      baseUrl,
+      this.getBaseUrl(req),
       filter,
       startIndex ? parseInt(startIndex, 10) : undefined,
       count ? parseInt(count, 10) : undefined,
@@ -81,7 +78,7 @@ export class ScimController {
     @Res({ passthrough: true }) res: any,
   ) {
     this.setScimContentType(res);
-    return this.scimService.createUser(this.getBody(req), this.getBaseUrl(req));
+    return this.scimService.createUser(req.body, this.getBaseUrl(req));
   }
 
   @Put('Users/:id')
@@ -91,7 +88,7 @@ export class ScimController {
     @Res({ passthrough: true }) res: any,
   ) {
     this.setScimContentType(res);
-    return this.scimService.replaceUser(id, this.getBody(req), this.getBaseUrl(req));
+    return this.scimService.replaceUser(id, req.body, this.getBaseUrl(req));
   }
 
   @Patch('Users/:id')
@@ -101,7 +98,7 @@ export class ScimController {
     @Res({ passthrough: true }) res: any,
   ) {
     this.setScimContentType(res);
-    return this.scimService.patchUser(id, this.getBody(req) as ScimPatchRequest, this.getBaseUrl(req));
+    return this.scimService.patchUser(id, req.body as ScimPatchRequest, this.getBaseUrl(req));
   }
 
   @Delete('Users/:id')
