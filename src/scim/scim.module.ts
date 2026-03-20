@@ -1,38 +1,67 @@
-import { DynamicModule, Module } from '@nestjs/common';
+import { DynamicModule, Module, Provider, Type } from '@nestjs/common';
 import { ScimController } from './scim.controller';
-import { ScimService } from './scim.service';
+import { ScimService, SCIM_USER_ADAPTER } from './scim.service';
 import { ScimBearerGuard, SCIM_BEARER_TOKEN } from './scim-bearer.guard';
+import type { ScimUserAdapter } from './scim-user.adapter';
+
+export interface ScimModuleOptions {
+  bearerToken: string;
+  /** The adapter class or an existing provider to use as SCIM_USER_ADAPTER */
+  adapter?: Type<ScimUserAdapter> | Provider;
+}
 
 @Module({})
 export class ScimModule {
   /**
-   * Register the SCIM module with the required bearer token for authentication.
+   * Register the SCIM module.
    *
-   * The consuming application must also provide the SCIM_USER_ADAPTER injection token
-   * that implements the ScimUserAdapter interface to bridge SCIM operations to its
-   * own user persistence layer (e.g., Prisma model).
-   *
-   * Usage:
+   * Pass the adapter directly to avoid cross-module injection issues:
    * ```typescript
-   * @Module({
-   *   imports: [ScimModule.register({ bearerToken: process.env.SCIM_BEARER_TOKEN })],
-   *   providers: [
-   *     { provide: SCIM_USER_ADAPTER, useClass: MyScimUserAdapter },
-   *   ],
+   * ScimModule.register({
+   *   bearerToken: process.env.SCIM_BEARER_TOKEN,
+   *   adapter: MyScimUserAdapter,
    * })
-   * export class AppModule {}
+   * ```
+   *
+   * Or provide SCIM_USER_ADAPTER separately if the adapter has dependencies
+   * from the parent module — in that case, use `registerAsync()` or provide
+   * the adapter in the same module and pass it as a provider object:
+   * ```typescript
+   * ScimModule.register({
+   *   bearerToken: process.env.SCIM_BEARER_TOKEN,
+   *   adapter: { provide: SCIM_USER_ADAPTER, useExisting: MyScimUserAdapter },
+   * })
    * ```
    */
-  static register(options: { bearerToken: string }): DynamicModule {
+  static register(options: ScimModuleOptions): DynamicModule {
+    const providers: Provider[] = [
+      ScimService,
+      { provide: SCIM_BEARER_TOKEN, useValue: options.bearerToken },
+      ScimBearerGuard,
+    ];
+
+    const imports: any[] = [];
+
+    if (options.adapter) {
+      if (typeof options.adapter === 'function') {
+        // Class provider
+        providers.push(options.adapter as Type<ScimUserAdapter>);
+        providers.push({
+          provide: SCIM_USER_ADAPTER,
+          useExisting: options.adapter as Type<ScimUserAdapter>,
+        });
+      } else {
+        // Custom provider object
+        providers.push(options.adapter as Provider);
+      }
+    }
+
     return {
       module: ScimModule,
+      imports,
       controllers: [ScimController],
-      providers: [
-        ScimService,
-        { provide: SCIM_BEARER_TOKEN, useValue: options.bearerToken },
-        ScimBearerGuard,
-      ],
-      // Note: SCIM_USER_ADAPTER must be provided by the consuming app
+      providers,
+      exports: [SCIM_USER_ADAPTER, ScimService],
     };
   }
 }

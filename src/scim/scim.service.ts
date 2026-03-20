@@ -1,6 +1,6 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import type { ScimUserAdapter, ScimPatchOp } from './scim-user.adapter';
-import { parseScimFilter, mapScimAttribute } from './scim-filter.parser';
+import { parseScimFilter } from './scim-filter.parser';
 import {
   toScimUser,
   fromScimUser,
@@ -75,7 +75,7 @@ export class ScimService {
 
     const operations: ScimPatchOp[] = (body.Operations || []).map((op) => ({
       op: op.op,
-      path: op.path ? mapScimAttribute(op.path) || op.path : undefined,
+      path: op.path,
       value: op.value,
     }));
 

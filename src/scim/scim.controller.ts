@@ -1,5 +1,4 @@
 import {
-  Body,
   Controller,
   Delete,
   Get,
@@ -18,10 +17,24 @@ import { ScimService } from './scim.service';
 import { ScimBearerGuard } from './scim-bearer.guard';
 import { SCIM_CONTENT_TYPE, type ScimPatchRequest } from './scim.dto';
 
+/**
+ * SCIM 2.0 Users controller.
+ *
+ * Uses @Req().body instead of @Body() to bypass any global ValidationPipe
+ * that would strip SCIM properties (whitelist:true strips undecorated fields).
+ */
 @Controller('scim/v2')
 @UseGuards(ScimBearerGuard)
 export class ScimController {
   constructor(private readonly scimService: ScimService) {}
+
+  /**
+   * Get the raw body, preferring __scimBody (saved before ValidationPipe)
+   * over req.body (which may have been stripped by whitelist:true).
+   */
+  private getBody(req: any): any {
+    return req.__scimBody || req.body;
+  }
 
   private getBaseUrl(req: any): string {
     const proto = req.headers['x-forwarded-proto'] || req.protocol || 'http';
@@ -64,34 +77,31 @@ export class ScimController {
   @Post('Users')
   @HttpCode(HttpStatus.CREATED)
   async createUser(
-    @Body() body: any,
     @Req() req: any,
     @Res({ passthrough: true }) res: any,
   ) {
     this.setScimContentType(res);
-    return this.scimService.createUser(body, this.getBaseUrl(req));
+    return this.scimService.createUser(this.getBody(req), this.getBaseUrl(req));
   }
 
   @Put('Users/:id')
   async replaceUser(
     @Param('id') id: string,
-    @Body() body: any,
     @Req() req: any,
     @Res({ passthrough: true }) res: any,
   ) {
     this.setScimContentType(res);
-    return this.scimService.replaceUser(id, body, this.getBaseUrl(req));
+    return this.scimService.replaceUser(id, this.getBody(req), this.getBaseUrl(req));
   }
 
   @Patch('Users/:id')
   async patchUser(
     @Param('id') id: string,
-    @Body() body: ScimPatchRequest,
     @Req() req: any,
     @Res({ passthrough: true }) res: any,
   ) {
     this.setScimContentType(res);
-    return this.scimService.patchUser(id, body, this.getBaseUrl(req));
+    return this.scimService.patchUser(id, this.getBody(req) as ScimPatchRequest, this.getBaseUrl(req));
   }
 
   @Delete('Users/:id')
