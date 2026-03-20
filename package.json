@@ -1,7 +1,7 @@
 {
   "name": "@zolivz/auth-core",
-  "version": "0.2.0",
-  "description": "Unified authentication, authorization, and SCIM provisioning for all apps",
+  "version": "1.0.0",
+  "description": "SCIM 2.0 provisioning module + auth helpers for NestJS apps",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "repository": {
@@ -24,43 +24,20 @@
     "./scim": {
       "types": "./dist/scim/index.d.ts",
       "default": "./dist/scim/index.js"
-    },
-    "./guards": {
-      "types": "./dist/guards/index.d.ts",
-      "default": "./dist/guards/index.js"
-    },
-    "./decorators": {
-      "types": "./dist/decorators/index.d.ts",
-      "default": "./dist/decorators/index.js"
     }
   },
-  "dependencies": {
-    "bcrypt": "^5.1.0",
-    "jose": "^5.2.0",
-    "uuid": "^9.0.0"
-  },
+  "dependencies": {},
   "peerDependencies": {
-    "@nestjs/common": ">=10.0.0",
-    "@nestjs/config": ">=3.0.0",
-    "@nestjs/core": ">=10.0.0",
-    "@nestjs/jwt": ">=10.0.0"
+    "@nestjs/common": ">=10.0.0"
   },
   "devDependencies": {
     "@nestjs/common": "^10.0.0",
-    "@nestjs/config": "^3.0.0",
-    "@nestjs/core": "^10.0.0",
-    "@nestjs/jwt": "^10.0.0",
-    "@types/bcrypt": "^5.0.0",
-    "@types/express": "^5.0.6",
     "@types/node": "^20.0.0",
-    "@types/uuid": "^9.0.0",
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.0",
     "typescript": "^5.4.0",
     "vitest": "^1.6.0"
   },
-  "files": [
-    "dist"
-  ],
+  "files": ["dist"],
   "license": "UNLICENSED"
 }
