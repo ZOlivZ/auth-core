@@ -1,5 +1,5 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import type { ScimUserAdapter, ScimPatchOp } from './scim-user.adapter';
+import type { ScimUserAdapter, ScimUserRecord, ScimPatchOp } from './scim-user.adapter';
 import { parseScimFilter } from './scim-filter.parser';
 import {
   toScimUser,
@@ -50,7 +50,30 @@ export class ScimService {
 
   async createUser(body: any, baseUrl: string): Promise<ScimUserResource> {
     const data = fromScimUser(body);
-    const record = await this.adapter.create(data);
+
+    // SCIM idempotence: if user already exists, update instead of failing
+    let existing: ScimUserRecord | null = null;
+    if (data.externalId) {
+      existing = await this.adapter.findByExternalId(data.externalId);
+    }
+    if (!existing && data.email) {
+      existing = await this.adapter.findByEmail(data.email);
+    }
+
+    let record: ScimUserRecord;
+    if (existing) {
+      record = await this.adapter.update(existing.id, {
+        email: data.email,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        externalId: data.externalId,
+        active: data.active,
+        role: data.role,
+      });
+    } else {
+      record = await this.adapter.create(data);
+    }
+
     return toScimUser(record, baseUrl);
   }
 

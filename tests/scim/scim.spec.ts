@@ -203,6 +203,7 @@ describe('ScimService', () => {
       active: true,
     };
     const created = makeRecord({ id: 'usr-new', email: 'new@test.com', firstName: 'New', lastName: 'User' });
+    vi.mocked(mockAdapter.findByEmail).mockResolvedValue(null);
     vi.mocked(mockAdapter.create).mockResolvedValue(created);
 
     const result = await service.createUser(scimBody, BASE_URL);
@@ -216,6 +217,64 @@ describe('ScimService', () => {
       role: undefined,
     });
     expect(result.id).toBe('usr-new');
+  });
+
+  it('createUser with existing externalId should update instead of create (upsert)', async () => {
+    const existing = makeRecord({ id: 'usr-001', externalId: 'ext-001', email: 'john@test.com' });
+    vi.mocked(mockAdapter.findByExternalId).mockResolvedValue(existing);
+    const updated = makeRecord({ id: 'usr-001', externalId: 'ext-001', email: 'john-updated@test.com', firstName: 'Johnny' });
+    vi.mocked(mockAdapter.update).mockResolvedValue(updated);
+
+    const scimBody = {
+      userName: 'john-updated@test.com',
+      externalId: 'ext-001',
+      name: { givenName: 'Johnny', familyName: 'Doe' },
+      active: true,
+    };
+
+    const result = await service.createUser(scimBody, BASE_URL);
+
+    expect(mockAdapter.findByExternalId).toHaveBeenCalledWith('ext-001');
+    expect(mockAdapter.create).not.toHaveBeenCalled();
+    expect(mockAdapter.update).toHaveBeenCalledWith('usr-001', {
+      email: 'john-updated@test.com',
+      firstName: 'Johnny',
+      lastName: 'Doe',
+      externalId: 'ext-001',
+      active: true,
+      role: undefined,
+    });
+    expect(result.id).toBe('usr-001');
+  });
+
+  it('createUser with existing email should update instead of create (upsert)', async () => {
+    const existing = makeRecord({ id: 'usr-002', email: 'jane@test.com' });
+    vi.mocked(mockAdapter.findByExternalId).mockResolvedValue(null);
+    vi.mocked(mockAdapter.findByEmail).mockResolvedValue(existing);
+    const updated = makeRecord({ id: 'usr-002', email: 'jane@test.com', externalId: 'ext-new', firstName: 'Jane' });
+    vi.mocked(mockAdapter.update).mockResolvedValue(updated);
+
+    const scimBody = {
+      userName: 'jane@test.com',
+      externalId: 'ext-new',
+      name: { givenName: 'Jane', familyName: 'Doe' },
+      active: true,
+    };
+
+    const result = await service.createUser(scimBody, BASE_URL);
+
+    expect(mockAdapter.findByExternalId).toHaveBeenCalledWith('ext-new');
+    expect(mockAdapter.findByEmail).toHaveBeenCalledWith('jane@test.com');
+    expect(mockAdapter.create).not.toHaveBeenCalled();
+    expect(mockAdapter.update).toHaveBeenCalledWith('usr-002', {
+      email: 'jane@test.com',
+      firstName: 'Jane',
+      lastName: 'Doe',
+      externalId: 'ext-new',
+      active: true,
+      role: undefined,
+    });
+    expect(result.id).toBe('usr-002');
   });
 
   it('getUser should return a SCIM formatted user', async () => {
