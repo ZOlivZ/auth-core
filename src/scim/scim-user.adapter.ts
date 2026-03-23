@@ -21,6 +21,7 @@ export interface ScimUserRecord {
   lastName: string;
   active: boolean;
   role?: string;
+  groups?: string[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -32,6 +33,7 @@ export interface ScimCreateUser {
   lastName: string;
   active: boolean;
   role?: string;
+  groups?: string[];
 }
 
 export interface ScimUpdateUser {
@@ -41,6 +43,7 @@ export interface ScimUpdateUser {
   lastName?: string;
   active?: boolean;
   role?: string;
+  groups?: string[];
 }
 
 export interface ScimPatchOp {

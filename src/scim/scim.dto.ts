@@ -25,6 +25,7 @@ export interface ScimUserResource {
   emails: Array<{ value: string; primary: boolean }>;
   active: boolean;
   roles?: Array<{ value: string }>;
+  groups?: Array<{ value: string; display?: string }>;
   meta: {
     resourceType: 'User';
     created: string;
@@ -88,6 +89,10 @@ export function toScimUser(record: ScimUserRecord, baseUrl: string): ScimUserRes
     resource.roles = [{ value: record.role }];
   }
 
+  if (record.groups?.length) {
+    resource.groups = record.groups.map((g) => ({ value: g, display: g }));
+  }
+
   return resource;
 }
 
@@ -107,6 +112,7 @@ export function fromScimUser(resource: any): ScimCreateUser {
     lastName: resource.name?.familyName || '',
     active: resource.active !== undefined ? resource.active : true,
     role: resource.roles?.[0]?.value,
+    groups: resource.groups?.map((g: any) => g.value || g) || undefined,
   };
 }
 
