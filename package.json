@@ -1,6 +1,6 @@
 {
   "name": "@zolivz/auth-core",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "SCIM 2.0 provisioning module + auth helpers for NestJS apps",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
